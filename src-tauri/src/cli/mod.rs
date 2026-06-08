@@ -116,6 +116,13 @@ pub enum Commands {
 
     #[command(name = "internal", hide = true, subcommand)]
     Internal(commands::internal::InternalCommand),
+
+    /// Codex Swift 账号管理与云端分组导入
+    #[command(name = "codex-swift", subcommand_required = true)]
+    CodexSwift {
+        #[command(subcommand)]
+        cmd: commands::codex_swift::CodexSwiftCommand,
+    },
 }
 
 /// Generate shell completions

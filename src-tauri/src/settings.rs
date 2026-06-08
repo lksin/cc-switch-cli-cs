@@ -335,6 +335,16 @@ fn sanitize_path_segment(raw: &str) -> String {
         .join("/")
 }
 
+/// Codex Swift 账号凭据（存储在本机 settings.json，不随云同步传播）
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexSwiftSettings {
+    #[serde(default)]
+    pub base_url: String,
+    #[serde(default)]
+    pub api_key: String,
+}
+
 /// 本机自动迁移状态。
 ///
 /// 这里记录的是本机启动时执行过的一次性迁移；标记不随数据库同步。
@@ -448,6 +458,9 @@ pub struct AppSettings {
     /// Codex 自定义端点列表
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub custom_endpoints_codex: HashMap<String, CustomEndpoint>,
+    /// Codex Swift 账号设置
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub codex_swift: Option<CodexSwiftSettings>,
 }
 
 fn default_show_in_tray() -> bool {
@@ -492,6 +505,7 @@ impl Default for AppSettings {
             local_migrations: None,
             custom_endpoints_claude: HashMap::new(),
             custom_endpoints_codex: HashMap::new(),
+            codex_swift: None,
         }
     }
 }
@@ -1018,5 +1032,15 @@ pub fn set_skip_claude_onboarding(enabled: bool) -> Result<(), AppError> {
 
     let mut settings = get_settings();
     settings.skip_claude_onboarding = enabled;
+    update_settings(settings)
+}
+
+pub fn get_codex_swift_settings() -> Option<CodexSwiftSettings> {
+    get_settings().codex_swift.clone()
+}
+
+pub fn set_codex_swift_settings(value: Option<CodexSwiftSettings>) -> Result<(), AppError> {
+    let mut settings = get_settings();
+    settings.codex_swift = value;
     update_settings(settings)
 }

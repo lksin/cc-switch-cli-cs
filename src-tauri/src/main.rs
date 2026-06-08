@@ -77,6 +77,10 @@ fn run(cli: Cli) -> Result<(), AppError> {
         Some(Commands::Update(cmd)) => cc_switch_lib::cli::commands::update::execute(cmd),
         Some(Commands::Completions(cmd)) => cc_switch_lib::cli::commands::completions::execute(cmd),
         Some(Commands::Internal(cmd)) => cc_switch_lib::cli::commands::internal::execute(cmd),
+        Some(Commands::CodexSwift { cmd }) => {
+            let state = cc_switch_lib::AppState::try_new()?;
+            cc_switch_lib::cli::commands::codex_swift::execute(cmd, &state)
+        }
     }
 }
 

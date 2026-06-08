@@ -3,6 +3,7 @@
 //! Implements the `ccswitch://v1/import?...` protocol for importing resources.
 //! Currently supports importing provider configurations for Claude/Codex/Gemini/OpenCode/OpenClaw.
 
+mod codexswift_parser;
 mod parser;
 mod provider;
 mod utils;
@@ -10,8 +11,22 @@ mod utils;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use codexswift_parser::parse_codexswift_url;
 pub use parser::parse_deeplink_url;
 pub use provider::import_provider_from_deeplink;
+
+/// Codex Swift 深链接请求（codexswift://v1/... 协议）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexSwiftDeepLinkRequest {
+    pub action: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+}
 
 /// Deep link import request model.
 ///

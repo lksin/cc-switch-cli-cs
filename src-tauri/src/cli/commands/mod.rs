@@ -1,4 +1,5 @@
 pub(crate) mod app_targets;
+pub mod codex_swift;
 pub mod auth;
 pub mod completions;
 pub mod config;

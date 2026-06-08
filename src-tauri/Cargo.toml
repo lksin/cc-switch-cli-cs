@@ -76,6 +76,9 @@ uuid = { version = "1.11", features = ["v4"] }
 # Utilities
 regex = "1.10"
 sha2 = "0.10"
+hmac = "0.12"
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
 minisign-verify = "0.2.4"
 semver = "1.0"
 flate2 = "1.0"

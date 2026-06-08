@@ -343,6 +343,14 @@ pub struct CodexChatReasoningConfig {
     pub output_format: Option<String>,
 }
 
+/// Codex Swift 供应商的云端群组元数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexSwiftProviderMeta {
+    pub group_id: String,
+    pub session_id: String,
+}
+
 /// 供应商元数据
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProviderMeta {
@@ -428,6 +436,9 @@ pub struct ProviderMeta {
     /// 用于多账号支持，关联到特定的 GitHub 账号
     #[serde(rename = "githubAccountId", skip_serializing_if = "Option::is_none")]
     pub github_account_id: Option<String>,
+    /// Codex Swift 群组来源元数据
+    #[serde(rename = "codexSwift", skip_serializing_if = "Option::is_none")]
+    pub codex_swift: Option<CodexSwiftProviderMeta>,
 }
 
 impl ProviderMeta {
