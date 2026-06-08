@@ -288,6 +288,16 @@ pub enum Action {
     ConfirmUpdate,
     CancelUpdate,
     CancelUpdateCheck,
+
+    CodexSwiftRefresh,
+    CodexSwiftLogin {
+        base_url: String,
+        api_key: String,
+    },
+    CodexSwiftLogout,
+    CodexSwiftApplyGroup {
+        group_id: String,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -442,10 +452,12 @@ pub enum SettingsItem {
     ClaudePluginIntegration,
     Proxy,
     CheckForUpdates,
+    CodexSwift,
 }
 
 impl SettingsItem {
-    pub const ALL: [SettingsItem; 9] = [
+    pub const ALL: [SettingsItem; 10] = [
+        SettingsItem::CodexSwift,
         SettingsItem::ManagedAccounts,
         SettingsItem::Language,
         SettingsItem::VisibleAppsMode,
@@ -456,6 +468,15 @@ impl SettingsItem {
         SettingsItem::Proxy,
         SettingsItem::CheckForUpdates,
     ];
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CodexSwiftTuiState {
+    pub loading: bool,
+    pub account: Option<crate::codex_swift::types::CodexSwiftAccount>,
+    pub groups: Vec<crate::codex_swift::types::CodexSwiftGroup>,
+    pub active_session: Option<crate::codex_swift::types::CodexSwiftActiveSession>,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -587,4 +608,6 @@ pub struct App {
     pub managed_auth_status: Option<crate::services::ManagedAuthStatus>,
     pub managed_auth_loading: bool,
     pub managed_auth_login: Option<ManagedAuthLoginState>,
+    pub codex_swift_state: CodexSwiftTuiState,
+    pub codex_swift_groups_idx: usize,
 }

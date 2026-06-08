@@ -35,8 +35,8 @@ mod tests;
 mod types;
 
 pub(crate) use app_state::{
-    Action, App, ConfigItem, LocalProxySettingsItem, MoveDirection, ProxyVisualTransition,
-    SettingsItem, WebDavConfigItem, PROXY_HERO_TRANSITION_TICKS,
+    Action, App, CodexSwiftTuiState, ConfigItem, LocalProxySettingsItem, MoveDirection,
+    ProxyVisualTransition, SettingsItem, WebDavConfigItem, PROXY_HERO_TRANSITION_TICKS,
 };
 pub(crate) use content_config::HERMES_MEMORY_ROW_COUNT;
 pub(crate) use content_usage::usage_active_pane_len;

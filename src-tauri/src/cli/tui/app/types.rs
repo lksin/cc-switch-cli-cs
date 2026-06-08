@@ -473,6 +473,7 @@ pub enum ConfirmAction {
     ClaudeModelFillAll {
         source_idx: usize,
     },
+    CodexSwiftLogout,
 }
 
 #[derive(Debug, Clone)]
@@ -509,6 +510,10 @@ pub enum TextSubmit {
     },
     WebDavJianguoyunUsername,
     WebDavJianguoyunPassword,
+    CodexSwiftBaseUrl,
+    CodexSwiftApiKey {
+        base_url: String,
+    },
 }
 
 #[derive(Debug, Clone)]

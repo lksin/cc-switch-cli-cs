@@ -120,6 +120,7 @@ impl App {
                             Action::None
                         }
                     }
+                    ConfirmAction::CodexSwiftLogout => Action::CodexSwiftLogout,
                     ConfirmAction::WebDavMigrateV1ToV2 => Action::ConfigWebDavMigrateV1ToV2,
                     ConfirmAction::ClaudeModelFillAll { source_idx } => {
                         let source_idx = *source_idx;
@@ -363,6 +364,33 @@ impl App {
             }
             TextSubmit::WebDavJianguoyunUsername => self.handle_webdav_username_submit(raw),
             TextSubmit::WebDavJianguoyunPassword => self.handle_webdav_password_submit(raw),
+            TextSubmit::CodexSwiftBaseUrl => {
+                let base_url = raw.trim().to_string();
+                let base_url = if base_url.is_empty() {
+                    "https://cs.lksin.top".to_string()
+                } else {
+                    base_url
+                };
+                self.overlay = Overlay::TextInput(TextInputState {
+                    title: crate::t!("Codex Swift — API Key", "Codex Swift — API Key").to_string(),
+                    prompt: crate::t!("API Key:", "API Key:").to_string(),
+                    input: TextInput::new(""),
+                    submit: TextSubmit::CodexSwiftApiKey { base_url },
+                    secret: true,
+                });
+                Action::None
+            }
+            TextSubmit::CodexSwiftApiKey { base_url } => {
+                let api_key = raw.trim().to_string();
+                if api_key.is_empty() {
+                    self.push_toast(
+                        crate::t!("API Key cannot be empty.", "API Key 不能为空。"),
+                        ToastKind::Warning,
+                    );
+                    return Action::None;
+                }
+                Action::CodexSwiftLogin { base_url, api_key }
+            }
         }
     }
 

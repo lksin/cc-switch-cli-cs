@@ -757,6 +757,10 @@ impl App {
                     });
                     Action::None
                 }
+                Some(SettingsItem::CodexSwift) => {
+                    self.push_route_and_switch(Route::SettingsCodexSwift);
+                    Action::CodexSwiftRefresh
+                }
                 Some(SettingsItem::ManagedAccounts) => {
                     let action = self.push_route_and_switch(Route::SettingsManagedAccounts);
                     if self.managed_auth_status.is_none() {
@@ -1002,6 +1006,67 @@ impl App {
 
         Action::ManagedAuthStartLogin {
             auth_provider: "codex_oauth".to_string(),
+        }
+    }
+
+    pub(crate) fn on_codex_swift_settings_key(
+        &mut self,
+        key: KeyEvent,
+        _data: &UiData,
+    ) -> Action {
+        let groups_len = self.codex_swift_state.groups.len();
+        match key.code {
+            KeyCode::Up => {
+                self.codex_swift_groups_idx = self.codex_swift_groups_idx.saturating_sub(1);
+                Action::None
+            }
+            KeyCode::Down => {
+                if groups_len > 0 {
+                    self.codex_swift_groups_idx =
+                        (self.codex_swift_groups_idx + 1).min(groups_len - 1);
+                }
+                Action::None
+            }
+            KeyCode::Char('r') => Action::CodexSwiftRefresh,
+            KeyCode::Char('l') => {
+                let current_base_url = crate::settings::get_codex_swift_settings()
+                    .map(|s| s.base_url)
+                    .unwrap_or_else(|| "https://cs.lksin.top".to_string());
+                self.overlay = Overlay::TextInput(TextInputState {
+                    title: crate::t!("Codex Swift — Server URL", "Codex Swift — 服务地址").to_string(),
+                    prompt: crate::t!("Base URL:", "服务地址:").to_string(),
+                    input: TextInput::new(current_base_url),
+                    submit: TextSubmit::CodexSwiftBaseUrl,
+                    secret: false,
+                });
+                Action::None
+            }
+            KeyCode::Char('d') => {
+                if self.codex_swift_state.account.is_some() {
+                    self.overlay = Overlay::Confirm(ConfirmOverlay {
+                        title: crate::t!("Disconnect Codex Swift", "断开 Codex Swift").to_string(),
+                        message: crate::t!(
+                            "Disconnect from Codex Swift and remove saved credentials?",
+                            "确定要断开 Codex Swift 连接并删除凭据吗？"
+                        )
+                        .to_string(),
+                        action: ConfirmAction::CodexSwiftLogout,
+                    });
+                }
+                Action::None
+            }
+            KeyCode::Char('a') | KeyCode::Enter => {
+                if self.codex_swift_state.account.is_none() {
+                    return Action::None;
+                }
+                let Some(group) = self.codex_swift_state.groups.get(self.codex_swift_groups_idx) else {
+                    return Action::None;
+                };
+                Action::CodexSwiftApplyGroup {
+                    group_id: group.id.clone(),
+                }
+            }
+            _ => Action::None,
         }
     }
 

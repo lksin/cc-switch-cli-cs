@@ -9331,15 +9331,21 @@ mod tests {
         assert!(
             matches!(
                 SettingsItem::ALL.first(),
-                Some(SettingsItem::ManagedAccounts)
+                Some(SettingsItem::CodexSwift)
             ),
-            "Managed Accounts should be the first Settings entry"
+            "CodexSwift should be the first Settings entry"
         );
         assert!(
             SettingsItem::ALL
                 .iter()
                 .any(|item| matches!(item, SettingsItem::ManagedAccounts)),
             "Settings should expose global managed accounts"
+        );
+        assert!(
+            SettingsItem::ALL
+                .iter()
+                .any(|item| matches!(item, SettingsItem::CodexSwift)),
+            "Settings should expose Codex Swift entry"
         );
     }
 

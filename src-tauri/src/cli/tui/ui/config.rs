@@ -2569,6 +2569,10 @@ pub(super) fn render_settings(
                 texts::tui_settings_check_for_updates().to_string(),
                 format!("v{}", env!("CARGO_PKG_VERSION")),
             ),
+            super::app::SettingsItem::CodexSwift => (
+                crate::t!("Codex Swift", "Codex Swift").to_string(),
+                codex_swift_settings_summary(app),
+            ),
         })
         .collect::<Vec<_>>();
 
@@ -3194,4 +3198,183 @@ pub(super) fn render_settings_proxy(
         .style(Style::default().fg(theme.dim)),
         chunks[2],
     );
+}
+
+fn codex_swift_settings_summary(app: &App) -> String {
+    if app.codex_swift_state.loading {
+        return crate::t!("Loading…", "加载中…").to_string();
+    }
+    if let Some(account) = &app.codex_swift_state.account {
+        let balance = account.balance;
+        let s = format!("{} (¥{:.2})", account.username, balance);
+        return s;
+    }
+    crate::t!("Not logged in", "未登录").to_string()
+}
+
+pub(super) fn render_settings_codex_swift(
+    frame: &mut Frame<'_>,
+    app: &App,
+    _data: &UiData,
+    area: Rect,
+    theme: &super::theme::Theme,
+) {
+    let outer = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Plain)
+        .border_style(pane_border_style(app, Focus::Content, theme))
+        .title(crate::t!("Codex Swift Account", "Codex Swift 账号管理").to_string());
+    frame.render_widget(outer.clone(), area);
+    let inner = outer.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1), // key bar
+            Constraint::Length(3), // summary bar
+            Constraint::Min(0),    // groups table
+        ])
+        .split(inner);
+
+    if app.focus == Focus::Content {
+        let mut keys: Vec<(&'static str, &'static str)> = vec![("r", crate::t!("Refresh", "刷新"))];
+        if app.codex_swift_state.account.is_some() {
+            keys.push(("d", crate::t!("Disconnect", "断开连接")));
+        } else {
+            keys.push(("l", crate::t!("Login", "登录")));
+        }
+        if !app.codex_swift_state.groups.is_empty() {
+            keys.push(("a", crate::t!("Apply", "应用")));
+        }
+        render_key_bar_center(frame, chunks[0], theme, &keys);
+    }
+
+    let summary = codex_swift_page_summary(app);
+    render_summary_bar(frame, chunks[1], theme, summary);
+
+    render_codex_swift_groups(frame, app, chunks[2], theme);
+}
+
+fn codex_swift_page_summary(app: &App) -> String {
+    if app.codex_swift_state.loading {
+        return crate::t!("Loading…", "加载中…").to_string();
+    }
+    if let Some(err) = &app.codex_swift_state.error {
+        let en = format!("Error: {err}");
+        let zh = format!("错误: {err}");
+        return crate::t!(&en, &zh).to_string();
+    }
+    let Some(account) = &app.codex_swift_state.account else {
+        return crate::t!("Not logged in. Press [l] to login.", "未登录，按 [l] 登录").to_string();
+    };
+    let session_info = if let Some(session) = &app.codex_swift_state.active_session {
+        let en = format!("  |  Active: {}", session.group_name);
+        let zh = format!("  |  当前会话: {}", session.group_name);
+        crate::t!(&en, &zh).to_string()
+    } else {
+        String::new()
+    };
+    let n = app.codex_swift_state.groups.len();
+    let en = format!("{} (¥{:.2}){}  |  {} groups", account.username, account.balance, session_info, n);
+    let zh = format!("{} (¥{:.2}){}  |  {} 个群组", account.username, account.balance, session_info, n);
+    crate::t!(&en, &zh).to_string()
+}
+
+fn render_codex_swift_groups(
+    frame: &mut Frame<'_>,
+    app: &App,
+    area: Rect,
+    theme: &super::theme::Theme,
+) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Plain)
+        .border_style(if app.focus == Focus::Content {
+            Style::default()
+                .fg(theme.accent)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(theme.dim)
+        })
+        .title(crate::t!("Groups", "群组列表").to_string());
+    frame.render_widget(block.clone(), area);
+    let inner = inset_left(block.inner(area), CONTENT_INSET_LEFT);
+
+    let groups = &app.codex_swift_state.groups;
+
+    if app.codex_swift_state.loading && groups.is_empty() {
+        frame.render_widget(
+            Paragraph::new(crate::t!("Loading…", "加载中…").to_string())
+                .style(Style::default().fg(theme.dim)),
+            inner,
+        );
+        return;
+    }
+
+    if groups.is_empty() {
+        let msg = if app.codex_swift_state.account.is_none() {
+            crate::t!("Login to see available groups.", "请登录以查看可用群组。").to_string()
+        } else {
+            crate::t!("No groups available.", "暂无可用群组。").to_string()
+        };
+        frame.render_widget(
+            Paragraph::new(msg).style(Style::default().fg(theme.dim)),
+            inner,
+        );
+        return;
+    }
+
+    let header = Row::new(vec![
+        Cell::from(crate::t!("Name", "名称").to_string()),
+        Cell::from(crate::t!("Type", "类型").to_string()),
+        Cell::from(crate::t!("Status", "状态").to_string()),
+        Cell::from(crate::t!("Multiplier", "倍率").to_string()),
+    ])
+    .style(
+        Style::default()
+            .fg(theme.dim)
+            .add_modifier(Modifier::BOLD),
+    );
+
+    let active_group_id = app
+        .codex_swift_state
+        .active_session
+        .as_ref()
+        .map(|s| s.group_id.as_str());
+
+    let rows = groups.iter().map(|g| {
+        let is_active = active_group_id == Some(g.id.as_str());
+        let name = if is_active {
+            format!("* {}", g.name)
+        } else {
+            format!("  {}", g.name)
+        };
+        Row::new(vec![
+            Cell::from(name),
+            Cell::from(g.group_type.clone()),
+            Cell::from(g.status.clone()),
+            Cell::from(format!("{:.1}x", g.multiplier)),
+        ])
+    });
+
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Min(20),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(10),
+        ],
+    )
+    .header(header)
+    .block(Block::default().borders(Borders::NONE))
+    .row_highlight_style(selection_style(theme))
+    .highlight_symbol(highlight_symbol(theme));
+
+    let mut state = TableState::default();
+    state.select(Some(
+        app.codex_swift_groups_idx
+            .min(groups.len().saturating_sub(1)),
+    ));
+    frame.render_stateful_widget(table, inner, &mut state);
 }

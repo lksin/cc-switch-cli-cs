@@ -197,6 +197,9 @@ fn render_content(
         Route::SettingsManagedAccounts => {
             render_settings_managed_accounts(frame, app, data, content_area, theme)
         }
+        Route::SettingsCodexSwift => {
+            render_settings_codex_swift(frame, app, data, content_area, theme)
+        }
     }
 }
 

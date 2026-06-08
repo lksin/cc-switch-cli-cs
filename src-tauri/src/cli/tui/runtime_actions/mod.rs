@@ -13,6 +13,7 @@ use super::runtime_systems::{
 use super::terminal::TuiTerminal;
 
 mod claude_temp_launch;
+mod codex_swift;
 mod codex_temp_launch;
 mod config;
 mod editor;
@@ -50,7 +51,8 @@ fn normalize_route_for_app(app_type: &AppType, route: &super::route::Route) -> s
             | super::route::Route::ConfigOpenClawAgents
             | super::route::Route::Settings
             | super::route::Route::SettingsProxy
-            | super::route::Route::SettingsManagedAccounts => route.clone(),
+            | super::route::Route::SettingsManagedAccounts
+            | super::route::Route::SettingsCodexSwift => route.clone(),
             _ => super::route::Route::Main,
         },
         AppType::Hermes => match route {
@@ -70,7 +72,8 @@ fn normalize_route_for_app(app_type: &AppType, route: &super::route::Route) -> s
             | super::route::Route::SkillDetail { .. }
             | super::route::Route::Settings
             | super::route::Route::SettingsProxy
-            | super::route::Route::SettingsManagedAccounts => route.clone(),
+            | super::route::Route::SettingsManagedAccounts
+            | super::route::Route::SettingsCodexSwift => route.clone(),
             _ => super::route::Route::Main,
         },
         _ => match route {
@@ -544,6 +547,14 @@ pub(crate) fn handle_action(
             auth_provider,
             account_id,
         } => settings::managed_auth_remove(&mut ctx, auth_provider, account_id),
+        Action::CodexSwiftRefresh => codex_swift::refresh(&mut ctx),
+        Action::CodexSwiftLogin { base_url, api_key } => {
+            codex_swift::login(&mut ctx, base_url, api_key)
+        }
+        Action::CodexSwiftLogout => codex_swift::logout(&mut ctx),
+        Action::CodexSwiftApplyGroup { group_id } => {
+            codex_swift::apply_group(&mut ctx, group_id)
+        }
         Action::CheckUpdate => updates::check(&mut ctx),
         Action::ConfirmUpdate => updates::confirm(&mut ctx),
         Action::CancelUpdate => {

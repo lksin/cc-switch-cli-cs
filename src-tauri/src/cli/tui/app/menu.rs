@@ -105,6 +105,8 @@ impl App {
             managed_auth_status: None,
             managed_auth_loading: false,
             managed_auth_login: None,
+            codex_swift_state: CodexSwiftTuiState::default(),
+            codex_swift_groups_idx: 0,
         }
     }
 
@@ -164,9 +166,10 @@ impl App {
             | Route::SkillsDiscover
             | Route::SkillsRepos
             | Route::SkillDetail { .. } => NavItem::Skills,
-            Route::Settings | Route::SettingsProxy | Route::SettingsManagedAccounts => {
-                NavItem::Settings
-            }
+            Route::Settings
+            | Route::SettingsProxy
+            | Route::SettingsManagedAccounts
+            | Route::SettingsCodexSwift => NavItem::Settings,
         }
     }
 
@@ -764,6 +767,7 @@ impl App {
             Route::Settings => self.on_settings_key(key, data),
             Route::SettingsProxy => self.on_settings_proxy_key(key, data),
             Route::SettingsManagedAccounts => self.on_settings_managed_accounts_key(key, data),
+            Route::SettingsCodexSwift => self.on_codex_swift_settings_key(key, data),
             Route::Main => match key.code {
                 KeyCode::Char('r') => Action::LocalEnvRefresh,
                 KeyCode::Char('p') | KeyCode::Char('P') => self.main_proxy_action(data),

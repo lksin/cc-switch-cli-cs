@@ -54,7 +54,7 @@ fn language_store() -> &'static RwLock<Language> {
                 .language
                 .as_deref()
                 .map(Language::from_code)
-                .unwrap_or(Language::English)
+                .unwrap_or(Language::Chinese)
         };
         RwLock::new(lang)
     })

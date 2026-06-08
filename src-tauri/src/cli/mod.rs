@@ -117,11 +117,45 @@ pub enum Commands {
     #[command(name = "internal", hide = true, subcommand)]
     Internal(commands::internal::InternalCommand),
 
-    /// Codex Swift 账号管理与云端分组导入
-    #[command(name = "codex-swift", subcommand_required = true)]
-    CodexSwift {
-        #[command(subcommand)]
-        cmd: commands::codex_swift::CodexSwiftCommand,
+    /// 登录 Codex Swift 账号
+    #[command(name = "login")]
+    Login {
+        /// 服务地址（默认 https://cs.lksin.top）
+        #[arg(long, default_value = "https://cs.lksin.top")]
+        base_url: String,
+        /// API Key（留空则交互输入）
+        #[arg(long)]
+        api_key: Option<String>,
+    },
+
+    /// 注销 Codex Swift 账号
+    #[command(name = "logout")]
+    Logout,
+
+    /// 显示 Codex Swift 账号信息与余额
+    #[command(name = "status")]
+    Status {
+        /// 输出机器可读 JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// 列出可用的 Codex Swift 模型分组
+    #[command(name = "groups")]
+    Groups {
+        /// 输出机器可读 JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// 将 Codex Swift 分组的供应商配置应用到本地
+    #[command(name = "apply")]
+    Apply {
+        /// 群组 ID
+        group_id: String,
+        /// 目标应用（可多选，逗号分隔，如 claude,codex）
+        #[arg(long, value_delimiter = ',')]
+        apps: Vec<String>,
     },
 }
 

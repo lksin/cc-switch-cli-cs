@@ -77,9 +77,46 @@ fn run(cli: Cli) -> Result<(), AppError> {
         Some(Commands::Update(cmd)) => cc_switch_lib::cli::commands::update::execute(cmd),
         Some(Commands::Completions(cmd)) => cc_switch_lib::cli::commands::completions::execute(cmd),
         Some(Commands::Internal(cmd)) => cc_switch_lib::cli::commands::internal::execute(cmd),
-        Some(Commands::CodexSwift { cmd }) => {
+        Some(Commands::Login { base_url, api_key }) => {
             let state = cc_switch_lib::AppState::try_new()?;
-            cc_switch_lib::cli::commands::codex_swift::execute(cmd, &state)
+            cc_switch_lib::cli::commands::codex_swift::execute(
+                cc_switch_lib::cli::commands::codex_swift::CodexSwiftCommand::Login {
+                    base_url,
+                    api_key,
+                },
+                &state,
+            )
+        }
+        Some(Commands::Logout) => {
+            let state = cc_switch_lib::AppState::try_new()?;
+            cc_switch_lib::cli::commands::codex_swift::execute(
+                cc_switch_lib::cli::commands::codex_swift::CodexSwiftCommand::Logout,
+                &state,
+            )
+        }
+        Some(Commands::Status { json }) => {
+            let state = cc_switch_lib::AppState::try_new()?;
+            cc_switch_lib::cli::commands::codex_swift::execute(
+                cc_switch_lib::cli::commands::codex_swift::CodexSwiftCommand::Status { json },
+                &state,
+            )
+        }
+        Some(Commands::Groups { json }) => {
+            let state = cc_switch_lib::AppState::try_new()?;
+            cc_switch_lib::cli::commands::codex_swift::execute(
+                cc_switch_lib::cli::commands::codex_swift::CodexSwiftCommand::Groups { json },
+                &state,
+            )
+        }
+        Some(Commands::Apply { group_id, apps }) => {
+            let state = cc_switch_lib::AppState::try_new()?;
+            cc_switch_lib::cli::commands::codex_swift::execute(
+                cc_switch_lib::cli::commands::codex_swift::CodexSwiftCommand::Apply {
+                    group_id,
+                    apps,
+                },
+                &state,
+            )
         }
     }
 }
