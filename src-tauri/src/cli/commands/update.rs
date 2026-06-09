@@ -19,6 +19,56 @@ use crate::error::AppError;
 
 const REPO_URL: &str = env!("CARGO_PKG_REPOSITORY");
 const BINARY_NAME: &str = "cc-switch";
+const CS_UPDATE_API: &str = "https://cs.lksin.top/api/version";
+
+/// 用于在 check 与 download 之间传递 download_url（同进程内单次传递）
+static CS_PENDING_DOWNLOAD_URL: std::sync::OnceLock<std::sync::Mutex<Option<String>>> =
+    std::sync::OnceLock::new();
+
+fn cs_pending_download_url_store() -> &'static std::sync::Mutex<Option<String>> {
+    CS_PENDING_DOWNLOAD_URL.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+fn cs_platform_type() -> Option<&'static str> {
+    match std::env::consts::OS {
+        "windows" => Some("tui_windows"),
+        "linux" => Some("tui_linux"),
+        "macos" => Some("tui_macos"),
+        _ => None,
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct CsVersionInfo {
+    version: String,
+    download_url: String,
+    #[serde(default)]
+    needs_update: bool,
+    #[serde(default)]
+    force_update: bool,
+}
+
+async fn fetch_cs_version_info(client: &reqwest::Client) -> Result<CsVersionInfo, AppError> {
+    let platform = cs_platform_type().ok_or_else(|| {
+        AppError::Message(format!(
+            "Unsupported platform for CS update: {}",
+            std::env::consts::OS
+        ))
+    })?;
+    let url = format!("{CS_UPDATE_API}?type={platform}");
+    let response = client
+        .get(&url)
+        .header(reqwest::header::USER_AGENT, USER_AGENT)
+        .send()
+        .await
+        .map_err(|e| AppError::Message(format!("Failed to fetch CS version info: {e}")))?;
+    response
+        .error_for_status()
+        .map_err(|e| AppError::Message(format!("CS version API returned error: {e}")))?
+        .json::<CsVersionInfo>()
+        .await
+        .map_err(|e| AppError::Message(format!("Failed to parse CS version info: {e}")))
+}
 const CHECKSUMS_FILE_NAME: &str = "checksums.txt";
 const LATEST_MANIFEST_FILE_NAME: &str = "latest.json";
 const HTTP_REQUEST_TIMEOUT_SECS: u64 = 30;
@@ -1382,6 +1432,31 @@ pub(crate) struct UpdateCheckInfo {
 }
 
 pub(crate) async fn check_for_update() -> Result<UpdateCheckInfo, AppError> {
+    let current_version = env!("CARGO_PKG_VERSION");
+    let client = create_http_client()?;
+
+    // 优先使用 Codex Swift 更新 API
+    if cs_platform_type().is_some() {
+        match fetch_cs_version_info(&client).await {
+            Ok(info) => {
+                let target_tag = normalize_tag(&info.version);
+                // 保存 download_url 供 download_and_apply 使用
+                if let Ok(mut guard) = cs_pending_download_url_store().lock() {
+                    *guard = Some(info.download_url.clone());
+                }
+                return Ok(build_update_check_info(
+                    current_version,
+                    target_tag,
+                    is_homebrew_install(),
+                ));
+            }
+            Err(e) => {
+                log::warn!("[update] CS API failed, falling back to GitHub: {e}");
+            }
+        }
+    }
+
+    // 回退到 GitHub Release 逻辑
     check_for_update_from_repo(REPO_URL).await
 }
 
@@ -1424,7 +1499,6 @@ pub(crate) async fn download_and_apply(
     target_tag: &str,
     on_progress: impl Fn(u64, Option<u64>),
 ) -> Result<(), AppError> {
-    // Same brew-prefix guard as the CLI path (see execute_async).
     if is_homebrew_install() {
         return Err(AppError::Message(
             "cc-switch was installed via Homebrew. Please upgrade with: brew upgrade cc-switch"
@@ -1432,6 +1506,25 @@ pub(crate) async fn download_and_apply(
         ));
     }
 
+    // 若有 CS pending download_url，优先走 CS 下载逻辑
+    let cs_url = cs_pending_download_url_store()
+        .lock()
+        .ok()
+        .and_then(|mut g| g.take());
+
+    if let Some(download_url) = cs_url {
+        let client = create_http_client()?;
+        let asset_name = asset_name_from_url(&download_url)?;
+        let downloaded_asset =
+            download_release_asset(&client, &download_url, &asset_name, Some(&on_progress))
+                .await?;
+        let binary_path =
+            install_cs_binary(&downloaded_asset.archive_path, &download_url)?;
+        replace_current_binary(&binary_path)?;
+        return Ok(());
+    }
+
+    // 回退：走 GitHub Release 逻辑
     let client = create_http_client()?;
     let release = resolve_target_release(&client, REPO_URL, Some(target_tag)).await?;
     let downloaded_asset = match release {
@@ -1458,6 +1551,37 @@ pub(crate) async fn download_and_apply(
     replace_current_binary(&extracted_binary)?;
 
     Ok(())
+}
+
+/// 根据 download_url 的扩展名安装 CS 下载的文件。
+/// - `.exe` 或无扩展名 → 直接作为可执行文件使用
+/// - `.zip` → 解压提取二进制
+/// - `.tar.gz` / `.tgz` → 解压提取二进制
+fn install_cs_binary(archive_path: &Path, url: &str) -> Result<PathBuf, AppError> {
+    let lower = url.to_lowercase();
+    if lower.ends_with(".tar.gz") || lower.ends_with(".tgz") {
+        extract_binary(archive_path)
+    } else if lower.ends_with(".zip") {
+        extract_binary(archive_path)
+    } else {
+        // 直接二进制（.exe 或裸文件）
+        let dest = archive_path
+            .parent()
+            .ok_or_else(|| AppError::Message("Invalid archive path".to_string()))?
+            .join(if cfg!(windows) {
+                "cc-switch.exe"
+            } else {
+                "cc-switch"
+            });
+        std::fs::copy(archive_path, &dest).map_err(|e| AppError::io(&dest, e))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let perms = std::fs::Permissions::from_mode(0o755);
+            std::fs::set_permissions(&dest, perms).map_err(|e| AppError::io(&dest, e))?;
+        }
+        Ok(dest)
+    }
 }
 
 #[cfg(test)]

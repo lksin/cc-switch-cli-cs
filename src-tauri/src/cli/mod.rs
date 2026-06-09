@@ -120,9 +120,9 @@ pub enum Commands {
     /// 登录 Codex Swift 账号
     #[command(name = "login")]
     Login {
-        /// 服务地址（默认 https://cs.lksin.top）
-        #[arg(long, default_value = "https://cs.lksin.top")]
-        base_url: String,
+        /// 服务地址（留空则交互输入，默认 https://cs.lksin.top）
+        #[arg(long, alias = "url")]
+        base_url: Option<String>,
         /// API Key（留空则交互输入）
         #[arg(long)]
         api_key: Option<String>,

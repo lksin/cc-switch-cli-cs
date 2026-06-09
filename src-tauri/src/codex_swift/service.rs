@@ -115,8 +115,14 @@ pub async fn apply_group(
             &decrypted.key,
             &app_type,
         )?;
-        ProviderService::add(state, app_type, provider)
+        let provider_id = provider.id.clone();
+        // 若该分组供应商已存在则先删除（幂等写入）
+        let _ = ProviderService::delete(state, app_type.clone(), &provider_id);
+        ProviderService::add(state, app_type.clone(), provider)
             .map_err(|e| AppError::Message(format!("写入供应商失败: {e}")))?;
+        // 切换至新供应商，使其立即生效
+        ProviderService::switch(state, app_type, &provider_id)
+            .map_err(|e| AppError::Message(format!("切换供应商失败: {e}")))?;
     }
 
     let active = CodexSwiftActiveSession {

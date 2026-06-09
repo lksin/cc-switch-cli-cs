@@ -1514,3 +1514,62 @@ impl AppToggleState for crate::settings::VisibleApps {
         self.is_enabled_for(app_type)
     }
 }
+
+pub(super) fn render_codex_swift_apps_picker_overlay(
+    frame: &mut Frame<'_>,
+    content_area: Rect,
+    theme: &theme::Theme,
+    group_name: &str,
+    selected: usize,
+    checked: &[bool; 3],
+) {
+    let en = format!("Apply group '{group_name}' — select apps");
+    let zh = format!("应用群组「{group_name}」— 选择目标应用");
+    let title = crate::t!(&en, &zh).to_string();
+
+    let area = centered_rect_fixed(OVERLAY_FIXED_LG.0, 10, content_area);
+    frame.render_widget(Clear, area);
+
+    let outer = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Plain)
+        .border_style(overlay_border_style(theme, false))
+        .title(title);
+    frame.render_widget(outer.clone(), area);
+    let inner = outer.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Min(0)])
+        .split(inner);
+
+    render_key_bar_center(
+        frame,
+        chunks[0],
+        theme,
+        &[
+            ("Space", texts::tui_key_toggle()),
+            ("Enter", texts::tui_key_apply()),
+            ("Esc", texts::tui_key_cancel()),
+        ],
+    );
+
+    let app_labels = ["claude", "codex", "gemini"];
+    let body_area = inset_top(chunks[1], 1);
+    let items = app_labels.iter().enumerate().map(|(i, &label)| {
+        let marker = if checked[i] {
+            texts::tui_marker_active()
+        } else {
+            texts::tui_marker_inactive()
+        };
+        ListItem::new(Line::from(Span::raw(format!("{marker}  {label}"))))
+    });
+
+    let list = List::new(items)
+        .highlight_style(selection_style(theme))
+        .highlight_symbol(highlight_symbol(theme));
+
+    let mut state = ListState::default();
+    state.select(Some(selected.min(2)));
+    frame.render_stateful_widget(list, body_area, &mut state);
+}

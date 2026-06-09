@@ -660,6 +660,13 @@ pub enum Overlay {
         selected: usize,
         options: Vec<OpenClawModelOption>,
     },
+    CodexSwiftAppsPicker {
+        group_id: String,
+        group_name: String,
+        selected: usize,
+        /// checked[0]=claude, checked[1]=codex, checked[2]=gemini
+        checked: [bool; 3],
+    },
     McpAppsPicker {
         id: String,
         name: String,
@@ -750,6 +757,7 @@ impl Overlay {
                 | Overlay::HermesModelsPicker { editing: false }
                 | Overlay::OpenClawToolsProfilePicker { .. }
                 | Overlay::OpenClawAgentsFallbackPicker { .. }
+                | Overlay::CodexSwiftAppsPicker { .. }
                 | Overlay::McpAppsPicker { .. }
                 | Overlay::VisibleAppsPicker { .. }
                 | Overlay::SkillsAppsPicker { .. }
@@ -787,6 +795,7 @@ impl Overlay {
             | Overlay::ManagedAccountActionPicker { .. }
             | Overlay::OpenClawToolsProfilePicker { .. }
             | Overlay::OpenClawAgentsFallbackPicker { .. }
+            | Overlay::CodexSwiftAppsPicker { .. }
             | Overlay::McpAppsPicker { .. }
             | Overlay::VisibleAppsPicker { .. }
             | Overlay::SkillsAppsPicker { .. }

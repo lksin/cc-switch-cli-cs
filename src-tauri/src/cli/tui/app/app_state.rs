@@ -297,6 +297,7 @@ pub enum Action {
     CodexSwiftLogout,
     CodexSwiftApplyGroup {
         group_id: String,
+        apps: Vec<String>,
     },
 }
 

@@ -42,6 +42,9 @@ impl App {
         if let Some(action) = self.handle_mcp_type_picker_key(key) {
             return Some(action);
         }
+        if let Some(action) = self.handle_codex_swift_apps_picker_key(key) {
+            return Some(action);
+        }
         if let Some(action) = self.handle_mcp_apps_picker_key(key, data) {
             return Some(action);
         }
@@ -1107,6 +1110,64 @@ impl App {
                     .collect();
                 self.overlay = Overlay::None;
                 Action::SkillsImportFromApps { imports }
+            }
+            _ => Action::None,
+        })
+    }
+
+    fn handle_codex_swift_apps_picker_key(&mut self, key: KeyEvent) -> Option<Action> {
+        let Overlay::CodexSwiftAppsPicker {
+            group_id,
+            selected,
+            checked,
+            ..
+        } = &mut self.overlay
+        else {
+            return None;
+        };
+
+        const APP_COUNT: usize = 3;
+
+        Some(match key.code {
+            KeyCode::Esc => {
+                self.overlay = Overlay::None;
+                Action::None
+            }
+            KeyCode::Up => {
+                *selected = selected.saturating_sub(1);
+                Action::None
+            }
+            KeyCode::Down => {
+                *selected = (*selected + 1).min(APP_COUNT - 1);
+                Action::None
+            }
+            KeyCode::Char(' ') => {
+                let idx = *selected;
+                if idx < APP_COUNT {
+                    checked[idx] = !checked[idx];
+                }
+                Action::None
+            }
+            KeyCode::Enter => {
+                let app_labels = ["claude", "codex", "gemini"];
+                let apps: Vec<String> = checked
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, &on)| on)
+                    .map(|(i, _)| app_labels[i].to_string())
+                    .collect();
+
+                if apps.is_empty() {
+                    self.push_toast(
+                        crate::t!("Please select at least one app.", "请至少选择一个应用。"),
+                        ToastKind::Warning,
+                    );
+                    return Some(Action::None);
+                }
+
+                let group_id = group_id.clone();
+                self.overlay = Overlay::None;
+                Action::CodexSwiftApplyGroup { group_id, apps }
             }
             _ => Action::None,
         })

@@ -1062,9 +1062,16 @@ impl App {
                 let Some(group) = self.codex_swift_state.groups.get(self.codex_swift_groups_idx) else {
                     return Action::None;
                 };
-                Action::CodexSwiftApplyGroup {
+                let s = crate::settings::get_settings();
+                let va = &s.visible_apps;
+                let checked = [va.claude, va.codex, va.gemini];
+                self.overlay = Overlay::CodexSwiftAppsPicker {
                     group_id: group.id.clone(),
-                }
+                    group_name: group.name.clone(),
+                    selected: 0,
+                    checked,
+                };
+                Action::None
             }
             _ => Action::None,
         }

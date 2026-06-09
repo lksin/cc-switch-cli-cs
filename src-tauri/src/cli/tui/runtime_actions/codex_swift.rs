@@ -96,28 +96,15 @@ pub(super) fn logout(ctx: &mut RuntimeActionContext<'_>) -> Result<(), AppError>
 pub(super) fn apply_group(
     ctx: &mut RuntimeActionContext<'_>,
     group_id: String,
+    apps: Vec<String>,
 ) -> Result<(), AppError> {
     let state = load_state()?;
-
-    // Default: apply to all visible apps that support it
-    let s = settings::get_settings();
-    let va = &s.visible_apps;
-    let mut apps = vec![];
-    if va.claude {
-        apps.push("claude".to_string());
-    }
-    if va.codex {
-        apps.push("codex".to_string());
-    }
-    if va.gemini {
-        apps.push("gemini".to_string());
-    }
 
     if apps.is_empty() {
         ctx.app.push_toast(
             crate::t!(
-                "No supported apps are enabled. Enable Claude, Codex, or Gemini first.",
-                "没有启用支持的应用，请先启用 Claude、Codex 或 Gemini。"
+                "No apps selected.",
+                "未选择任何应用。"
             ),
             ToastKind::Warning,
         );

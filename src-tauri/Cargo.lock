@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "cc-switch"
-version = "5.8.1"
+version = "2.0.0"
 dependencies = [
  "aes",
  "anyhow",

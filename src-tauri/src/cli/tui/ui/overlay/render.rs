@@ -160,6 +160,19 @@ pub(crate) fn render_overlay(
             *selected,
             options,
         ),
+        Overlay::CodexSwiftAppsPicker {
+            group_name,
+            selected,
+            checked,
+            ..
+        } => super::pickers::render_codex_swift_apps_picker_overlay(
+            frame,
+            content_area,
+            theme,
+            group_name,
+            *selected,
+            checked,
+        ),
         Overlay::McpAppsPicker {
             name,
             selected,

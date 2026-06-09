@@ -552,8 +552,8 @@ pub(crate) fn handle_action(
             codex_swift::login(&mut ctx, base_url, api_key)
         }
         Action::CodexSwiftLogout => codex_swift::logout(&mut ctx),
-        Action::CodexSwiftApplyGroup { group_id } => {
-            codex_swift::apply_group(&mut ctx, group_id)
+        Action::CodexSwiftApplyGroup { group_id, apps } => {
+            codex_swift::apply_group(&mut ctx, group_id, apps)
         }
         Action::CheckUpdate => updates::check(&mut ctx),
         Action::ConfirmUpdate => updates::confirm(&mut ctx),

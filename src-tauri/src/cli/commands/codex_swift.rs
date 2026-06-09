@@ -10,10 +10,10 @@ use crate::store::AppState;
 pub enum CodexSwiftCommand {
     /// 登录 Codex Swift 账号
     Login {
-        /// 服务地址（默认 https://cs.lksin.top）
-        #[arg(long, default_value = "https://cs.lksin.top")]
-        base_url: String,
-        /// API Key
+        /// 服务地址（留空则交互输入，默认 https://cs.lksin.top）
+        #[arg(long, alias = "url")]
+        base_url: Option<String>,
+        /// API Key（留空则交互输入）
         #[arg(long)]
         api_key: Option<String>,
     },
@@ -53,6 +53,20 @@ pub fn execute(cmd: CodexSwiftCommand, state: &AppState) -> Result<(), AppError>
     let runtime = create_runtime()?;
     match cmd {
         CodexSwiftCommand::Login { base_url, api_key } => {
+            let base_url = match base_url {
+                Some(u) if !u.trim().is_empty() => u,
+                _ => {
+                    let input = inquire::Text::new("Server URL:")
+                        .with_default("https://cs.lksin.top")
+                        .prompt()
+                        .map_err(|e| AppError::Message(e.to_string()))?;
+                    if input.trim().is_empty() {
+                        "https://cs.lksin.top".to_string()
+                    } else {
+                        input
+                    }
+                }
+            };
             let api_key = match api_key {
                 Some(k) => k,
                 None => inquire::Password::new("API Key:")
@@ -134,26 +148,32 @@ pub fn execute(cmd: CodexSwiftCommand, state: &AppState) -> Result<(), AppError>
             let apps = if apps.is_empty() {
                 let s = settings::get_settings();
                 let va = &s.visible_apps;
-                let mut result = vec![];
+                let mut available = vec![];
                 if va.claude {
-                    result.push("claude".to_string());
+                    available.push("claude");
                 }
                 if va.codex {
-                    result.push("codex".to_string());
+                    available.push("codex");
                 }
                 if va.gemini {
-                    result.push("gemini".to_string());
+                    available.push("gemini");
                 }
-                result
+                if available.is_empty() {
+                    return Err(AppError::InvalidInput(
+                        "没有已启用的目标应用，请先在设置中启用 Claude、Codex 或 Gemini".to_string(),
+                    ));
+                }
+                let selected = inquire::MultiSelect::new("选择要应用的 Agents 应用（空格选中，回车确认）:", available.clone())
+                    .with_all_selected_by_default()
+                    .prompt()
+                    .map_err(|e| AppError::Message(e.to_string()))?;
+                if selected.is_empty() {
+                    return Err(AppError::InvalidInput("未选择任何应用".to_string()));
+                }
+                selected.into_iter().map(str::to_string).collect()
             } else {
                 apps
             };
-
-            if apps.is_empty() {
-                return Err(AppError::InvalidInput(
-                    "没有可用的目标应用，请通过 --apps 指定".to_string(),
-                ));
-            }
 
             let session = runtime.block_on(service::apply_group(state, &group_id, apps))?;
             println!(
