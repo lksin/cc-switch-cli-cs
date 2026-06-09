@@ -759,7 +759,7 @@ impl App {
                 }
                 Some(SettingsItem::CodexSwift) => {
                     self.push_route_and_switch(Route::SettingsCodexSwift);
-                    Action::CodexSwiftRefresh
+                    Action::None
                 }
                 Some(SettingsItem::ManagedAccounts) => {
                     let action = self.push_route_and_switch(Route::SettingsManagedAccounts);
@@ -1028,19 +1028,6 @@ impl App {
                 Action::None
             }
             KeyCode::Char('r') => Action::CodexSwiftRefresh,
-            KeyCode::Char('l') => {
-                let current_base_url = crate::settings::get_codex_swift_settings()
-                    .map(|s| s.base_url)
-                    .unwrap_or_else(|| "https://cs.lksin.top".to_string());
-                self.overlay = Overlay::TextInput(TextInputState {
-                    title: crate::t!("Codex Swift — Server URL", "Codex Swift — 服务地址").to_string(),
-                    prompt: crate::t!("Base URL:", "服务地址:").to_string(),
-                    input: TextInput::new(current_base_url),
-                    submit: TextSubmit::CodexSwiftBaseUrl,
-                    secret: false,
-                });
-                Action::None
-            }
             KeyCode::Char('d') => {
                 if self.codex_swift_state.account.is_some() {
                     self.overlay = Overlay::Confirm(ConfirmOverlay {
@@ -1057,21 +1044,27 @@ impl App {
             }
             KeyCode::Char('a') | KeyCode::Enter => {
                 if self.codex_swift_state.account.is_none() {
+                    // Not logged in — open login dialog
+                    let current_base_url = crate::settings::get_codex_swift_settings()
+                        .map(|s| s.base_url)
+                        .unwrap_or_else(|| "https://cs.lksin.top".to_string());
+                    self.overlay = Overlay::TextInput(TextInputState {
+                        title: crate::t!("Codex Swift — Server URL", "Codex Swift — 服务地址").to_string(),
+                        prompt: crate::t!("Base URL:", "服务地址:").to_string(),
+                        input: TextInput::new(current_base_url),
+                        submit: TextSubmit::CodexSwiftBaseUrl,
+                        secret: false,
+                    });
                     return Action::None;
                 }
                 let Some(group) = self.codex_swift_state.groups.get(self.codex_swift_groups_idx) else {
                     return Action::None;
                 };
-                let s = crate::settings::get_settings();
-                let va = &s.visible_apps;
-                let checked = [va.claude, va.codex, va.gemini];
-                self.overlay = Overlay::CodexSwiftAppsPicker {
+                let apps = vec![self.app_type.as_str().to_string()];
+                Action::CodexSwiftApplyGroup {
                     group_id: group.id.clone(),
-                    group_name: group.name.clone(),
-                    selected: 0,
-                    checked,
-                };
-                Action::None
+                    apps,
+                }
             }
             _ => Action::None,
         }

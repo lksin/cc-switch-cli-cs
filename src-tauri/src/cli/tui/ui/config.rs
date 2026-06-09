@@ -3240,11 +3240,11 @@ pub(super) fn render_settings_codex_swift(
         let mut keys: Vec<(&'static str, &'static str)> = vec![("r", crate::t!("Refresh", "刷新"))];
         if app.codex_swift_state.account.is_some() {
             keys.push(("d", crate::t!("Disconnect", "断开连接")));
+            if !app.codex_swift_state.groups.is_empty() {
+                keys.push(("Enter", crate::t!("Apply", "应用")));
+            }
         } else {
-            keys.push(("l", crate::t!("Login", "登录")));
-        }
-        if !app.codex_swift_state.groups.is_empty() {
-            keys.push(("a", crate::t!("Apply", "应用")));
+            keys.push(("Enter", crate::t!("Login", "登录")));
         }
         render_key_bar_center(frame, chunks[0], theme, &keys);
     }

@@ -760,6 +760,7 @@ pub(crate) fn route_has_content_list(route: &Route) -> bool {
             | Route::Settings
             | Route::SettingsProxy
             | Route::SettingsManagedAccounts
+            | Route::SettingsCodexSwift
     )
 }
 

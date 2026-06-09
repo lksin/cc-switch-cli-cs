@@ -22,15 +22,15 @@ use crate::app_config::AppType;
 #[command(
     name = "cc-switch",
     version,
-    about = "All-in-One Assistant for Claude Code, Codex, Gemini & OpenCode CLI",
-    long_about = "Unified management for Claude Code, Codex, Gemini, and OpenCode CLI provider configurations, MCP servers, skills, prompts, local proxy routes, and environment checks.\n\nRun without arguments to enter interactive mode."
+    about = "Claude Code、Codex、Gemini 及 OpenCode CLI 一站式管理工具",
+    long_about = "统一管理 Claude Code、Codex、Gemini 和 OpenCode CLI 的供应商配置、MCP 服务器、技能、提示词、本地代理路由及环境检查。\n\n不带参数运行即进入交互模式。"
 )]
 pub struct Cli {
-    /// Specify the application type
+    /// 指定应用类型
     #[arg(short, long, global = true, value_enum)]
     pub app: Option<AppType>,
 
-    /// Enable verbose output
+    /// 启用详细输出
     #[arg(short, long, global = true)]
     pub verbose: bool,
 
@@ -40,78 +40,78 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Manage ChatGPT Codex OAuth accounts
+    /// 管理 ChatGPT Codex OAuth 账号
     #[command(subcommand)]
     Auth(commands::auth::AuthCommand),
 
-    /// Manage providers (list, switch, export, speedtest, stream-check, fetch-models, quota)
+    /// 管理供应商（列表、切换、导出、测速、流检、获取模型、配额）
     #[command(subcommand)]
     Provider(commands::provider::ProviderCommand),
 
-    /// Switch to a provider (shortcut for `provider switch <id>`)
+    /// 切换供应商（`provider switch <id>` 的快捷方式）
     Use {
-        /// Provider ID to switch to
+        /// 供应商 ID
         id: String,
     },
 
-    /// Manage MCP servers (list, add, edit, delete, sync)
+    /// 管理 MCP 服务器（列表、添加、编辑、删除、同步）
     #[command(subcommand)]
     Mcp(commands::mcp::McpCommand),
 
-    /// Manage prompts (list, current, live, import, activate, create, rename, edit)
+    /// 管理提示词（列表、当前、实时、导入、激活、创建、重命名、编辑）
     #[command(subcommand)]
     Prompts(commands::prompts::PromptsCommand),
 
-    /// Manage skills and skill repositories
+    /// 管理技能与技能仓库
     #[command(subcommand)]
     Skills(commands::skills::SkillsCommand),
 
-    /// Manage configuration, backups, common snippets, and WebDAV sync
+    /// 管理配置、备份、通用片段及 WebDAV 同步
     #[command(subcommand)]
     Config(commands::config::ConfigCommand),
 
-    /// Manage local multi-app proxy
+    /// 管理本地多应用代理
     #[command(subcommand)]
     Proxy(commands::proxy::ProxyCommand),
 
-    /// Manage persisted UI and integration settings
+    /// 管理持久化 UI 及集成设置
     #[command(subcommand)]
     Settings(commands::settings::SettingsCommand),
 
-    /// Manage automatic failover and provider queue
+    /// 管理自动故障转移与供应商队列
     #[command(subcommand)]
     Failover(commands::failover::FailoverCommand),
 
-    /// Manage saved assistant sessions
+    /// 管理已保存的助手会话
     #[command(subcommand)]
     Sessions(commands::sessions::SessionsCommand),
 
-    /// Hermes-specific commands (memory blobs etc.)
+    /// Hermes 专属命令（记忆存储等）
     #[command(subcommand)]
     Hermes(commands::hermes::HermesCommand),
 
-    /// Start an app with a provider selector without switching the global current provider
+    /// 使用供应商选择器启动应用，不切换全局当前供应商
     #[cfg(unix)]
     #[command(subcommand)]
     Start(commands::start::StartCommand),
 
-    /// Manage the cc-switch supervisor daemon (start/stop/status/logs)
+    /// 管理 cc-switch 守护进程（启动/停止/状态/日志）
     #[cfg(unix)]
     #[command(subcommand)]
     Daemon(commands::daemon::DaemonCommand),
 
-    /// Manage environment variables and local CLI tool checks
+    /// 管理环境变量与本地 CLI 工具检查
     #[command(subcommand)]
     Env(commands::env::EnvCommand),
 
-    /// Update cc-switch binary to latest release
+    /// 将 cc-switch 更新至最新版本
     Update(commands::update::UpdateCommand),
 
-    /// Enter interactive mode
+    /// 进入交互模式
     #[command(alias = "ui")]
     Interactive,
 
-    /// Generate, install, inspect, or uninstall shell completions
+    /// 生成、安装、检查或卸载 Shell 自动补全
     Completions(commands::completions::CompletionsCommand),
 
     #[command(name = "internal", hide = true, subcommand)]
@@ -188,7 +188,7 @@ mod tests {
         let mut cmd = Cli::command();
         let help = cmd.render_long_help().to_string();
 
-        assert!(help.contains("prompts, local proxy routes, and environment checks"));
+        assert!(help.contains("提示词、本地代理路由及环境检查"));
     }
 
     #[test]

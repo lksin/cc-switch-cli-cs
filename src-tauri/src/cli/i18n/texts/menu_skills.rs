@@ -95,6 +95,19 @@ pub fn menu_manage_skills_variants() -> (&'static str, &'static str) {
     ("🧩 Skills", "🧩 技能")
 }
 
+pub fn menu_codex_swift() -> &'static str {
+    let (en, zh) = menu_codex_swift_variants();
+    if is_chinese() {
+        zh
+    } else {
+        en
+    }
+}
+
+pub fn menu_codex_swift_variants() -> (&'static str, &'static str) {
+    ("☁ Codex Swift", "☁ Codex Swift")
+}
+
 pub fn menu_settings() -> &'static str {
     let (en, zh) = menu_settings_variants();
     if is_chinese() {

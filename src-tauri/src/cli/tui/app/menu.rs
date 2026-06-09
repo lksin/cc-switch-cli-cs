@@ -166,10 +166,10 @@ impl App {
             | Route::SkillsDiscover
             | Route::SkillsRepos
             | Route::SkillDetail { .. } => NavItem::Skills,
-            Route::Settings
-            | Route::SettingsProxy
-            | Route::SettingsManagedAccounts
-            | Route::SettingsCodexSwift => NavItem::Settings,
+            Route::SettingsCodexSwift => NavItem::CodexSwift,
+            Route::Settings | Route::SettingsProxy | Route::SettingsManagedAccounts => {
+                NavItem::Settings
+            }
         }
     }
 
@@ -727,7 +727,8 @@ impl App {
             }
             KeyCode::Enter => {
                 if let Some(route) = self.nav_item().to_route() {
-                    self.push_route_and_switch(route)
+                    self.push_route_and_switch(route);
+                    Action::None
                 } else {
                     self.overlay = Overlay::Confirm(ConfirmOverlay {
                         title: crate::cli::i18n::texts::tui_confirm_exit_title().to_string(),

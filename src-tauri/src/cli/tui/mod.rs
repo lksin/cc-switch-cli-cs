@@ -1022,6 +1022,45 @@ fn queue_sessions_refresh_if_needed(
     }
 }
 
+enum CodexSwiftPreloadMsg {
+    Ok {
+        account: Option<crate::codex_swift::types::CodexSwiftAccount>,
+        groups: Vec<crate::codex_swift::types::CodexSwiftGroup>,
+        active_session: Option<crate::codex_swift::types::CodexSwiftActiveSession>,
+    },
+    Err(String),
+}
+
+fn load_codex_swift_in_background() -> CodexSwiftPreloadMsg {
+    let rt = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(e) => return CodexSwiftPreloadMsg::Err(e.to_string()),
+    };
+    let account_result = rt.block_on(crate::codex_swift::service::get_account());
+    let groups = rt
+        .block_on(crate::codex_swift::service::list_groups())
+        .ok()
+        .unwrap_or_default();
+    let active_session = data::load_state()
+        .ok()
+        .and_then(|state| {
+            crate::codex_swift::service::get_active_session(&state)
+                .ok()
+                .flatten()
+        });
+    match account_result {
+        Ok(account) => CodexSwiftPreloadMsg::Ok {
+            account,
+            groups,
+            active_session,
+        },
+        Err(e) => CodexSwiftPreloadMsg::Err(e.to_string()),
+    }
+}
+
 pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
     let _panic_hook = PanicRestoreHookGuard::install();
     let mut terminal = TuiTerminal::new()?;
@@ -1030,6 +1069,18 @@ pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
         data::UiData::load,
         apply_visible_apps_startup_policy,
     )?;
+
+    let codex_swift_preload_rx: Option<mpsc::Receiver<CodexSwiftPreloadMsg>> =
+        if crate::settings::get_codex_swift_settings().is_some() {
+            let (tx, rx) = mpsc::channel();
+            std::thread::spawn(move || {
+                let _ = tx.send(load_codex_swift_in_background());
+            });
+            Some(rx)
+        } else {
+            None
+        };
+
     let mut proxy_open_flash = ProxyOpenFlash::default();
     app.reset_proxy_activity(
         data.proxy.estimated_input_tokens_total,
@@ -1345,6 +1396,28 @@ pub fn run(app_override: Option<AppType>) -> Result<(), AppError> {
         if let Some(auth) = managed_auth.as_ref() {
             while let Ok(msg) = auth.result_rx.try_recv() {
                 handle_managed_auth_msg(&mut app, msg);
+            }
+        }
+
+        if let Some(rx) = codex_swift_preload_rx.as_ref() {
+            if let Ok(msg) = rx.try_recv() {
+                match msg {
+                    CodexSwiftPreloadMsg::Ok {
+                        account,
+                        groups,
+                        active_session,
+                    } => {
+                        app.codex_swift_state.account = account;
+                        app.codex_swift_state.groups = groups;
+                        app.codex_swift_state.active_session = active_session;
+                        app.codex_swift_state.loading = false;
+                        app.codex_swift_state.error = None;
+                    }
+                    CodexSwiftPreloadMsg::Err(e) => {
+                        app.codex_swift_state.error = Some(e);
+                        app.codex_swift_state.loading = false;
+                    }
+                }
             }
         }
 

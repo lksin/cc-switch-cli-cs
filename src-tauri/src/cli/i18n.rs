@@ -309,7 +309,7 @@ pub mod texts {
 
     // Ratatui TUI (new interactive UI)
     pub fn tui_app_title() -> &'static str {
-        "cc-switch"
+        "Codex Swift TUI"
     }
 
     pub fn tui_tabs_title() -> &'static str {
@@ -7659,6 +7659,19 @@ pub mod texts {
 
     pub fn menu_hermes_memory_variants() -> (&'static str, &'static str) {
         ("🧠 Memory", "🧠 记忆管理")
+    }
+
+    pub fn menu_codex_swift() -> &'static str {
+        let (en, zh) = menu_codex_swift_variants();
+        if is_chinese() {
+            zh
+        } else {
+            en
+        }
+    }
+
+    pub fn menu_codex_swift_variants() -> (&'static str, &'static str) {
+        ("☁ Codex Swift", "☁ Codex Swift")
     }
 
     pub fn menu_settings() -> &'static str {

@@ -171,7 +171,7 @@ pub fn interactive_legacy_tui_removed() -> &'static str {
 
 // Ratatui TUI (new interactive UI)
 pub fn tui_app_title() -> &'static str {
-    "cc-switch"
+    "Codex Swift TUI"
 }
 
 pub fn tui_tabs_title() -> &'static str {

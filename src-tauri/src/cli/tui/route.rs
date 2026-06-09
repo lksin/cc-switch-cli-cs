@@ -45,12 +45,13 @@ pub enum NavItem {
     OpenClawEnv,
     OpenClawTools,
     OpenClawAgents,
+    CodexSwift,
     Settings,
     Exit,
 }
 
 impl NavItem {
-    pub const ALL: [NavItem; 10] = [
+    pub const ALL: [NavItem; 11] = [
         NavItem::Main,
         NavItem::Providers,
         NavItem::Mcp,
@@ -59,11 +60,12 @@ impl NavItem {
         NavItem::Prompts,
         NavItem::Usage,
         NavItem::Config,
+        NavItem::CodexSwift,
         NavItem::Settings,
         NavItem::Exit,
     ];
 
-    pub const OPENCLAW_ALL: [NavItem; 11] = [
+    pub const OPENCLAW_ALL: [NavItem; 12] = [
         NavItem::Main,
         NavItem::Providers,
         NavItem::Sessions,
@@ -73,11 +75,12 @@ impl NavItem {
         NavItem::OpenClawAgents,
         NavItem::Usage,
         NavItem::Config,
+        NavItem::CodexSwift,
         NavItem::Settings,
         NavItem::Exit,
     ];
 
-    pub const HERMES_ALL: [NavItem; 10] = [
+    pub const HERMES_ALL: [NavItem; 11] = [
         NavItem::Main,
         NavItem::Providers,
         NavItem::Mcp,
@@ -86,6 +89,7 @@ impl NavItem {
         NavItem::HermesMemory,
         NavItem::Usage,
         NavItem::Config,
+        NavItem::CodexSwift,
         NavItem::Settings,
         NavItem::Exit,
     ];
@@ -113,6 +117,7 @@ impl NavItem {
             NavItem::OpenClawEnv => Some(Route::ConfigOpenClawEnv),
             NavItem::OpenClawTools => Some(Route::ConfigOpenClawTools),
             NavItem::OpenClawAgents => Some(Route::ConfigOpenClawAgents),
+            NavItem::CodexSwift => Some(Route::SettingsCodexSwift),
             NavItem::Settings => Some(Route::Settings),
             NavItem::Exit => None,
         }
